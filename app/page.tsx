@@ -2,14 +2,30 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import Header from '@/app/components/staff/Header';
 import EventsCalendarTab from '@/app/components/staff/EventsCalendarTab';
 import { LogIn } from 'lucide-react';
 import Link from 'next/link';
 
+/* =====================
+   Types
+===================== */
+
+interface PublicEvent {
+  id?: number;
+  title: string;
+  date: string;
+  time?: string;
+  category?: string;
+  location?: string;
+  organizer?: string;
+  startDate?: string;
+  endDate?: string;
+  eventType?: string;
+}
+
 export default function PublicCalendarPage() {
-  const [events, setEvents] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [events, setEvents] = useState<PublicEvent[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     loadEvents();
@@ -23,14 +39,21 @@ export default function PublicCalendarPage() {
         .order('date', { ascending: false });
 
       if (error) throw error;
+
       if (data) {
-        const mappedEvents = data.map(e => ({
-          ...e,
+        const mappedEvents: PublicEvent[] = data.map((e) => ({
+          id: e.id,
+          title: e.title,
+          date: e.date,
+          time: e.time,
+          category: e.category,
+          location: e.location,
+          organizer: e.organizer,
           startDate: e.date,
           endDate: e.date,
-          eventType: e.category,
-          time: e.time
+          eventType: e.category
         }));
+
         setEvents(mappedEvents);
       }
     } catch (error) {
