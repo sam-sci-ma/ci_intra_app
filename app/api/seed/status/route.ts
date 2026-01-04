@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabaseClient';
 
 export async function GET() {
   try {
-    const tables = ['events','communications','internships','campaigns','milestones','admissions_metrics'];
+    const tables = ['events','communications','internships','campaigns','milestones','admissions_metrics','super_admins'];
     const results: Record<string, number|null> = {};
 
     const supabaseAdmin = getSupabaseAdmin();

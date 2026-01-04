@@ -42,6 +42,11 @@ export async function POST() {
 
     const admissionsMetrics = [{ id: 1, total_applicants: 1247, target_applicants: 1500, accepted_students: 342, target_acceptance: 400, confirmed_enrollments: 156, target_enrollments: 300 }];
 
+    const superAdmins = [
+      { id: 1, name: 'Admin User 1', email: 'admin1@scintranet.edu', role: 'super_admin', created_at: new Date().toISOString() },
+      { id: 2, name: 'Admin User 2', email: 'admin2@scintranet.edu', role: 'super_admin', created_at: new Date().toISOString() }
+    ];
+
     // Upsert data
     const supabaseAdmin = getSupabaseAdmin();
 
@@ -62,6 +67,9 @@ export async function POST() {
 
     const res6 = await supabaseAdmin.from('admissions_metrics').upsert(admissionsMetrics, { onConflict: 'id' });
     if (res6.error) throw res6.error;
+
+    const res7 = await supabaseAdmin.from('super_admins').upsert(superAdmins, { onConflict: 'id' });
+    if (res7.error) throw res7.error;
 
     return NextResponse.json({ ok: true });
   } catch (err: any) {
