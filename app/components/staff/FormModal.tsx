@@ -1,3 +1,4 @@
+"use client";
 import { X, Check } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -28,7 +29,7 @@ export default function FormModal({
   if (!isOpen) return null;
 
   const handleChange = (field: string, value: any) => {
-    setLocalData(prev => ({...prev, [field]: value}));
+    setLocalData((prev: any) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
