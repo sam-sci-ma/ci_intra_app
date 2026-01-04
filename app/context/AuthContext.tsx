@@ -1,84 +1,151 @@
 "use client";
 
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  role?: string;
+}
 
 interface AuthContextType {
-  user: { id: string; email: string; name: string } | null;
+  user: AuthUser | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
   isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthContextType['user']>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Check if user is already logged in (from localStorage)
+  /* =========================================
+     Restore session on app load
+  ========================================= */
+
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error('Error parsing stored user:', error);
-        localStorage.removeItem('user');
+    const restoreSession = async () => {
+      const { data, error } = await supabase.auth.getSession();
+
+      if (error) {
+        console.error("Session error:", error);
+        setIsLoading(false);
+        return;
       }
-    }
-    setIsLoading(false);
+
+      const sessionUser = data.session?.user;
+      if (!sessionUser) {
+        setIsLoading(false);
+        return;
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from("staff_profiles")
+        .select("*")
+        .eq("id", sessionUser.id)
+        .single();
+
+      if (profileError || !profile || !profile.is_approved) {
+        await supabase.auth.signOut();
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
+
+      setUser({
+        id: profile.id,
+        email: profile.email,
+        name: profile.full_name,
+        role: profile.role
+      });
+
+      setIsLoading(false);
+    };
+
+    restoreSession();
   }, []);
+
+  /* =========================================
+     Login
+  ========================================= */
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
+
     try {
-      // Simple mock authentication - in production, call your backend
-      // For demo: admin1@scintranet.edu / admin2@scintranet.edu
-      if (
-        (email === 'admin1@scintranet.edu' && password === 'password') ||
-        (email === 'admin2@scintranet.edu' && password === 'password')
-      ) {
-        const userData = {
-          id: email.split('@')[0],
-          email,
-          name: email === 'admin1@scintranet.edu' ? 'Admin User 1' : 'Admin User 2'
-        };
-        setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
-      } else {
-        throw new Error('Invalid email or password');
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        throw new Error(error.message);
       }
-    } catch (error) {
-      setUser(null);
-      localStorage.removeItem('user');
-      throw error;
+
+      if (!data.user) {
+        throw new Error("Authentication failed");
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from("staff_profiles")
+        .select("*")
+        .eq("id", data.user.id)
+        .single();
+
+      if (profileError || !profile) {
+        await supabase.auth.signOut();
+        throw new Error("User profile not found");
+      }
+
+      if (!profile.is_approved) {
+        await supabase.auth.signOut();
+        throw new Error("Account pending admin approval");
+      }
+
+      setUser({
+        id: profile.id,
+        email: profile.email,
+        name: profile.full_name,
+        role: profile.role
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = () => {
+  /* =========================================
+     Logout
+  ========================================= */
+
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem('user');
   };
 
   const value: AuthContextType = {
     user,
     isLoading,
+    isAuthenticated: !!user,
     login,
-    logout,
-    isAuthenticated: !!user
+    logout
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+/* =========================================
+   Hook
+========================================= */
+
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
+    throw new Error("useAuth must be used within AuthProvider");
   }
   return context;
 }
