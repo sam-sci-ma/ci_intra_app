@@ -1,18 +1,18 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
-import { format, parse, startOfWeek, getDay } from 'date-fns';
-import { enUS } from 'date-fns/locale';
-import { Edit2, Trash2, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
+import { useState } from "react";
+import { Calendar, dateFnsLocalizer } from "react-big-calendar";
+import { format, parse, startOfWeek, getDay } from "date-fns";
+import { enUS } from "date-fns/locale";
+import { Edit2, Trash2, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import "react-big-calendar/lib/css/react-big-calendar.css";
 
 /* =====================
    Localizer
 ===================== */
 
 const locales = {
-  'en-US': enUS
+  "en-US": enUS
 };
 
 const localizer = dateFnsLocalizer({
@@ -38,6 +38,9 @@ interface CalendarEvent {
   organizer?: string;
   category?: string;
   eventType?: string;
+
+  created_by?: string;
+  owner_name?: string;
 }
 
 interface EventsCalendarTabProps {
@@ -63,8 +66,8 @@ export default function EventsCalendarTab({
   const calendarEvents = events.map(event => ({
     id: event.id,
     title: event.title,
-    start: new Date(event.startDate || event.date || ''),
-    end: new Date(event.endDate || event.date || ''),
+    start: new Date(event.startDate || event.date || ""),
+    end: new Date(event.endDate || event.date || ""),
     resource: event
   }));
 
@@ -77,8 +80,8 @@ export default function EventsCalendarTab({
   };
 
   const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
   ];
 
   const currentMonth = currentDate.getMonth();
@@ -130,8 +133,8 @@ export default function EventsCalendarTab({
               onClick={() => goToMonth(index)}
               className={`px-3 py-2 rounded-lg text-sm font-medium ${
                 currentMonth === index
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? "bg-indigo-600 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
               {month.slice(0, 3)}
@@ -149,7 +152,7 @@ export default function EventsCalendarTab({
           style={{ height: 600 }}
           selectable
           popup
-          views={['month', 'week', 'day', 'agenda']}
+          views={["month", "week", "day", "agenda"]}
           defaultView="month"
           date={currentDate}
           onNavigate={setCurrentDate}
@@ -164,6 +167,9 @@ export default function EventsCalendarTab({
             <div>
               <h3 className="text-xl font-semibold">{selectedEvent.title}</h3>
               <p className="text-sm text-gray-600">{selectedEvent.location}</p>
+              <p className="text-sm text-gray-500">
+                Owner: {selectedEvent.owner_name || "Unknown"}
+              </p>
             </div>
             <button onClick={() => setSelectedEvent(null)}>✕</button>
           </div>
@@ -173,14 +179,14 @@ export default function EventsCalendarTab({
               <p className="text-sm font-medium text-gray-600">Date</p>
               <p>
                 {format(
-                  new Date(selectedEvent.startDate || selectedEvent.date || ''),
-                  'MMM dd, yyyy'
+                  new Date(selectedEvent.startDate || selectedEvent.date || ""),
+                  "MMM dd, yyyy"
                 )}
               </p>
             </div>
             <div>
               <p className="text-sm font-medium text-gray-600">Time</p>
-              <p>{selectedEvent.time || 'Not specified'}</p>
+              <p>{selectedEvent.time || "Not specified"}</p>
             </div>
           </div>
 

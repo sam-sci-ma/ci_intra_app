@@ -62,7 +62,7 @@ export default function AdmissionsTab({
           <div className="bg-gray-200 rounded-full h-2">
             <div
               className="bg-blue-600 h-2 rounded-full"
-              style={{ width: `${(metrics.totalApplicants / maxApplicants) * 100}%` }}
+              style={{ width: `MAD{(metrics.totalApplicants / maxApplicants) * 100}%` }}
             />
           </div>
           <p className="text-xs text-gray-500 mt-2">{Math.round((metrics.totalApplicants / maxApplicants) * 100)}% of target</p>
@@ -78,7 +78,7 @@ export default function AdmissionsTab({
           <div className="bg-gray-200 rounded-full h-2">
             <div
               className="bg-green-600 h-2 rounded-full"
-              style={{ width: `${acceptanceRate}%` }}
+              style={{ width: `MAD{acceptanceRate}%` }}
             />
           </div>
           <p className="text-xs text-gray-500 mt-2">{acceptanceRate}% acceptance rate</p>
@@ -94,7 +94,7 @@ export default function AdmissionsTab({
           <div className="bg-gray-200 rounded-full h-2">
             <div
               className="bg-purple-600 h-2 rounded-full"
-              style={{ width: `${enrollmentRate}%` }}
+              style={{ width: `MAD{enrollmentRate}%` }}
             />
           </div>
           <p className="text-xs text-gray-500 mt-2">{enrollmentRate}% yield rate</p>
@@ -121,7 +121,7 @@ export default function AdmissionsTab({
                   <h4 className="font-semibold text-gray-900">{campaign.name}</h4>
                   <p className="text-sm text-gray-600 mt-1">{campaign.description}</p>
                   <div className="flex gap-4 mt-3 text-sm text-gray-600">
-                    <span>Budget: ${campaign.budget?.toLocaleString() || 0}</span>
+                    <span>Budget: MAD{campaign.budget?.toLocaleString() || 0}</span>
                     <span>Leads: {campaign.leads || 0}</span>
                     <span>Start: {campaign.startDate}</span>
                   </div>
@@ -173,7 +173,7 @@ export default function AdmissionsTab({
                   )}
                 </button>
                 <div className="flex-1">
-                  <p className={`font-medium ${milestone.completed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
+                  <p className={`font-medium MAD{milestone.completed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
                     {milestone.title || milestone.description}
                   </p>
                   <p className="text-sm text-gray-600 mt-1">Due: {milestone.dueDate || milestone.due_date}</p>
