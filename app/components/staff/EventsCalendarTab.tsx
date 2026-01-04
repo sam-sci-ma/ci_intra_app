@@ -18,21 +18,38 @@ const locales = {
 const localizer = dateFnsLocalizer({
   format,
   parse,
-  startOfWeek: (date) => startOfWeek(date, { weekStartsOn: 1 }),
+  startOfWeek: (date: Date) => startOfWeek(date, { weekStartsOn: 1 }),
   getDay,
   locales
 });
 
 /* =====================
-   Props
+   Types
 ===================== */
 
+interface CalendarEvent {
+  id?: number;
+  title: string;
+  date?: string;
+  startDate?: string;
+  endDate?: string;
+  time?: string;
+  location?: string;
+  organizer?: string;
+  category?: string;
+  eventType?: string;
+}
+
 interface EventsCalendarTabProps {
-  events: any[];
-  onEdit: (event: any) => void;
+  events: CalendarEvent[];
+  onEdit: (event: CalendarEvent) => void;
   onDelete: (id: number) => void;
   onAdd: () => void;
 }
+
+/* =====================
+   Component
+===================== */
 
 export default function EventsCalendarTab({
   events,
@@ -40,22 +57,18 @@ export default function EventsCalendarTab({
   onDelete,
   onAdd
 }: EventsCalendarTabProps) {
-  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [currentDate, setCurrentDate] = useState<Date>(new Date(2026, 0, 1));
-
-  /* =====================
-     Calendar events
-  ===================== */
 
   const calendarEvents = events.map(event => ({
     id: event.id,
     title: event.title,
-    start: new Date(event.startDate || event.date),
-    end: new Date(event.endDate || event.date),
+    start: new Date(event.startDate || event.date || ''),
+    end: new Date(event.endDate || event.date || ''),
     resource: event
   }));
 
-  const handleSelectEvent = (event: any) => {
+  const handleSelectEvent = (event: { resource: CalendarEvent }) => {
     setSelectedEvent(event.resource);
   };
 
@@ -85,7 +98,6 @@ export default function EventsCalendarTab({
 
   return (
     <div className="space-y-6">
-      {/* Add Event Button */}
       <div className="flex justify-end">
         <button
           onClick={onAdd}
@@ -96,7 +108,6 @@ export default function EventsCalendarTab({
         </button>
       </div>
 
-      {/* Month Navigation */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900">
@@ -129,7 +140,6 @@ export default function EventsCalendarTab({
         </div>
       </div>
 
-      {/* Calendar */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
         <Calendar
           localizer={localizer}
@@ -148,7 +158,6 @@ export default function EventsCalendarTab({
         />
       </div>
 
-      {/* Selected Event */}
       {selectedEvent && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex justify-between mb-4">
@@ -162,7 +171,12 @@ export default function EventsCalendarTab({
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div>
               <p className="text-sm font-medium text-gray-600">Date</p>
-              <p>{format(new Date(selectedEvent.startDate || selectedEvent.date), 'MMM dd, yyyy')}</p>
+              <p>
+                {format(
+                  new Date(selectedEvent.startDate || selectedEvent.date || ''),
+                  'MMM dd, yyyy'
+                )}
+              </p>
             </div>
             <div>
               <p className="text-sm font-medium text-gray-600">Time</p>
@@ -180,7 +194,9 @@ export default function EventsCalendarTab({
             </button>
             <button
               onClick={() => {
-                onDelete(selectedEvent.id);
+                if (selectedEvent.id !== undefined) {
+                  onDelete(selectedEvent.id);
+                }
                 setSelectedEvent(null);
               }}
               className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2"
