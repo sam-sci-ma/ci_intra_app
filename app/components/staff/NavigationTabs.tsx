@@ -1,4 +1,7 @@
-import { Calendar, MessageSquare, Briefcase, Award } from 'lucide-react';
+"use client";
+
+import { Calendar, MessageSquare, Briefcase, Award, Key } from 'lucide-react';
+import { useAuth } from '@/app/context/AuthContext';
 
 interface NavigationTabsProps {
   activeTab: string;
@@ -6,13 +9,20 @@ interface NavigationTabsProps {
 }
 
 export default function NavigationTabs({ activeTab, onTabChange }: NavigationTabsProps) {
-  const tabs = [
+  const { user } = useAuth();
+
+  const tabs: Array<{ id: string; label: string; icon: any }> = [
+      { id: 'events-calendar', label: 'Events Calendar', icon: Calendar },
     { id: 'events', label: 'Events List', icon: Calendar },
-    { id: 'events-calendar', label: 'Events Calendar', icon: Calendar },
     { id: 'communications', label: 'Communications', icon: MessageSquare },
     { id: 'internships', label: 'Internships', icon: Briefcase },
     { id: 'admissions', label: 'Admissions 2026', icon: Award }
   ];
+
+  // Show superadmins tab only for users with role 'super_admin'
+  if (user && user.role === 'super_admin') {
+    tabs.push({ id: 'superadmins', label: 'User Approvals', icon: Key });
+  }
 
   return (
     <div className="bg-white border-b border-gray-200">

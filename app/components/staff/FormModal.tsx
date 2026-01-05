@@ -130,6 +130,16 @@ export default function FormModal({
                   </select>
                 </div>
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Attendees</label>
+                <input
+                  type="text"
+                  value={localData.attendees || ''}
+                  onChange={(e) => handleChange('attendees', e.target.value)}
+                  placeholder="Enter a number "
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
             </div>
           )}
 

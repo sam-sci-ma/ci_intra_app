@@ -22,24 +22,26 @@ export default function RegisterPage() {
     setIsSubmitting(true);
 
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password
-      });
+      // Insert into pending_users for super_admin approval
+      const { error: pendingError } = await supabase
+        .from('pending_users')
+        .insert({
+          email,
+          full_name: fullName,
+          password_hash: password,
+          status: 'pending'
+        });
 
-      if (error) throw error;
-
-      await supabase.from('staff_profiles').insert({
-        id: data.user?.id,
-        full_name: fullName,
-        email,
-        role: 'staff',
-        is_approved: false
-      });
+      if (pendingError) throw pendingError;
 
       setSuccess(
         'Registration submitted successfully. Your account will be activated once approved by an administrator.'
       );
+      
+      // Clear form
+      setFullName('');
+      setEmail('');
+      setPassword('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {

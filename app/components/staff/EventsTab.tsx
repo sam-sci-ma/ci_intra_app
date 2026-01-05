@@ -66,6 +66,7 @@ export default function EventsTab({
                   </div>
                   <div className="text-gray-600">Location: {event.location}</div>
                   <div className="text-gray-600">Organizer: {event.organizer}</div>
+                  <div className="text-gray-600">Creator: {event.owner_name}</div>
                 </div>
               </div>
               <div className="flex gap-2">

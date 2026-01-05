@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/app/context/AuthContext';
 import Header from '@/app/components/staff/Header';
 import NavigationTabs from '@/app/components/staff/NavigationTabs';
 import FormModal from '@/app/components/staff/FormModal';
@@ -10,9 +11,10 @@ import EventsCalendarTab from '@/app/components/staff/EventsCalendarTab';
 import CommunicationsTab from '@/app/components/staff/CommunicationsTab';
 import InternshipsTab from '@/app/components/staff/InternshipsTab';
 import AdmissionsTab from '@/app/components/staff/AdmissionsTab';
+import SuperAdminsTab from '@/app/components/staff/SuperAdminsTab';
 
 /* =====================
-   Type definitions
+   Types
 ===================== */
 
 type EventItem = {
@@ -24,8 +26,10 @@ type EventItem = {
   location?: string;
   organizer?: string;
   startDate?: string;
-  endDate?: string;
   eventType?: string;
+  attendees?: number;
+  created_by?: string;
+  owner_name?: string;
 };
 
 type Communication = {
@@ -74,15 +78,13 @@ type Milestone = {
 type AdmissionsMetric = Record<string, any>;
 
 export default function StaffDashboard() {
-  const [activeTab, setActiveTab] = useState<string>('events');
-  const [showModal, setShowModal] = useState<boolean>(false);
-  const [modalType, setModalType] = useState<string>('event');
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [formData, setFormData] = useState<Record<string, any>>({});
+  const { user } = useAuth();
 
-  /* =====================
-     Typed state
-  ===================== */
+  const [activeTab, setActiveTab] = useState('events');
+  const [showModal, setShowModal] = useState(false);
+  const [modalType, setModalType] = useState('event');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [formData, setFormData] = useState<Record<string, any>>({});
 
   const [events, setEvents] = useState<EventItem[]>([]);
   const [communications, setCommunications] = useState<Communication[]>([]);
@@ -91,66 +93,74 @@ export default function StaffDashboard() {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [admissionsMetrics, setAdmissionsMetrics] = useState<AdmissionsMetric[]>([]);
 
+  /* =====================
+     Load data
+  ===================== */
+
   useEffect(() => {
     loadAllData();
   }, []);
 
   async function loadAllData() {
-    try {
-      const [
-        eventsData,
-        commsData,
-        internshipsData,
-        campaignsData,
-        milestonesData,
-        admissionsData
-      ] = await Promise.all([
-        supabase.from('events').select('*').order('date', { ascending: false }),
-        supabase.from('communications').select('*').order('date', { ascending: false }),
-        supabase.from('internships').select('*').order('start_date', { ascending: false }),
-        supabase.from('campaigns').select('*').order('start_date', { ascending: false }),
-        supabase.from('milestones').select('*').order('due_date', { ascending: true }),
-        supabase.from('admissions_metrics').select('*')
-      ]);
+    const [
+      eventsRes,
+      commsRes,
+      internshipsRes,
+      campaignsRes,
+      milestonesRes,
+      admissionsRes
+    ] = await Promise.all([
+      supabase
+        .from('events')
+        .select(`*, staff_profiles ( full_name )`)
+        .order('date', { ascending: false }),
+      supabase.from('communications').select('*').order('date', { ascending: false }),
+      supabase.from('internships').select('*').order('start_date', { ascending: false }),
+      supabase.from('campaigns').select('*').order('start_date', { ascending: false }),
+      supabase.from('milestones').select('*').order('due_date'),
+      supabase.from('admissions_metrics').select('*')
+    ]);
 
-      if (eventsData.data) setEvents(mapEvents(eventsData.data));
-      if (commsData.data) setCommunications(commsData.data as Communication[]);
-      if (internshipsData.data) setInternships(mapInternships(internshipsData.data));
-      if (campaignsData.data) setCampaigns(mapCampaigns(campaignsData.data));
-      if (milestonesData.data) setMilestones(mapMilestones(milestonesData.data));
-      if (admissionsData.data) setAdmissionsMetrics(admissionsData.data);
-    } catch (error) {
-      console.error('Error loading data:', error);
+    console.log('Events Response:', eventsRes);
+    if (eventsRes.error) console.error('Events Error:', eventsRes.error);
+    
+    if (eventsRes.data) {
+      console.log('Events Data:', eventsRes.data);
+      setEvents(mapEvents(eventsRes.data));
     }
+    if (commsRes.data) setCommunications(commsRes.data as Communication[]);
+    if (internshipsRes.data) setInternships(mapInternships(internshipsRes.data));
+    if (campaignsRes.data) setCampaigns(mapCampaigns(campaignsRes.data));
+    if (milestonesRes.data) setMilestones(mapMilestones(milestonesRes.data));
+    if (admissionsRes.data) setAdmissionsMetrics(admissionsRes.data);
   }
 
   /* =====================
-     Mapping helpers
+     Mappers
   ===================== */
 
-  const mapEvents = (data: EventItem[]): EventItem[] =>
+  const mapEvents = (data: any[]) =>
     data.map(e => ({
       ...e,
       startDate: e.date,
-      endDate: e.date,
       eventType: e.category,
-      time: e.time
+      owner_name: e.staff_profiles?.full_name || (e.created_by ? 'Unknown' : 'System Admin')
     }));
 
-  const mapInternships = (data: Internship[]): Internship[] =>
+  const mapInternships = (data: Internship[]) =>
     data.map(i => ({
       ...i,
       startDate: i.start_date,
       endDate: i.end_date
     }));
 
-  const mapCampaigns = (data: Campaign[]): Campaign[] =>
+  const mapCampaigns = (data: Campaign[]) =>
     data.map(c => ({
       ...c,
       startDate: c.start_date
     }));
 
-  const mapMilestones = (data: Milestone[]): Milestone[] =>
+  const mapMilestones = (data: Milestone[]) =>
     data.map(m => ({
       ...m,
       dueDate: m.due_date,
@@ -174,7 +184,101 @@ export default function StaffDashboard() {
   };
 
   /* =====================
-     Delete + toggle
+     Submit handler
+  ===================== */
+
+  const handleSubmit = async (data: Record<string, any>) => {
+    const tables: Record<string, string> = {
+      event: 'events',
+      communication: 'communications',
+      internship: 'internships',
+      campaign: 'campaigns',
+      milestone: 'milestones'
+    };
+
+    const table = tables[modalType];
+    if (!table) return alert('Unknown form type');
+
+    let dbData: any;
+
+    if (modalType === 'event') {
+      dbData = {
+        title: data.title,
+        date: data.startDate ?? data.date,
+        time: data.time,
+        location: data.location,
+        organizer: data.organizer,
+        attendees: Number(data.attendees) || 0,
+        category: data.eventType ?? data.category,
+        created_by: user?.id
+      };
+    } else if (modalType === 'communication') {
+      dbData = {
+        title: data.title,
+        content: data.content,
+        author: data.author,
+        category: data.category,
+        priority: data.priority,
+        date: data.date
+      };
+    } else if (modalType === 'internship') {
+      dbData = {
+        position: data.position,
+        company: data.company,
+        student: data.student,
+        supervisor: data.supervisor,
+        start_date: data.startDate,
+        end_date: data.endDate,
+        status: data.status
+      };
+    } else if (modalType === 'campaign') {
+      dbData = {
+        name: data.name,
+        platform: data.platform,
+        budget: data.budget,
+        spent: data.spent,
+        leads: data.leads,
+        start_date: data.startDate
+      };
+    } else {
+      dbData = {
+        title: data.title,
+        due_date: data.dueDate,
+        is_completed: data.completed
+      };
+    }
+
+    if (data.id) {
+      const { error: updateError } = await supabase
+        .from(table)
+        .update(dbData)
+        .eq('id', data.id);
+
+      if (updateError) {
+        console.error('Update Error:', updateError);
+        return alert(updateError.message);
+      }
+      console.log('Update successful');
+    } else {
+      console.log('Inserting into:', table, 'Data:', dbData);
+      const { data: insertedData, error: insertError } = await supabase
+        .from(table)
+        .insert(dbData)
+        .select();
+
+      if (insertError) {
+        console.error('Insert Error:', insertError);
+        return alert(insertError.message);
+      }
+      console.log('Insert successful, inserted data:', insertedData);
+    }
+
+    await loadAllData();
+    setShowModal(false);
+  };
+
+  /* =====================
+     Delete and toggle
   ===================== */
 
   const handleDelete = async (id: number, type: string) => {
@@ -186,26 +290,22 @@ export default function StaffDashboard() {
       milestone: 'milestones'
     };
 
-    const { error } = await supabase.from(tables[type]).delete().eq('id', id);
-    if (error) return alert('Delete failed');
-
-    if (type === 'event') setEvents(events.filter(e => e.id !== id));
-    if (type === 'communication') setCommunications(communications.filter(c => c.id !== id));
-    if (type === 'internship') setInternships(internships.filter(i => i.id !== id));
-    if (type === 'campaign') setCampaigns(campaigns.filter(c => c.id !== id));
-    if (type === 'milestone') setMilestones(milestones.filter(m => m.id !== id));
+    await supabase.from(tables[type]).delete().eq('id', id);
+    loadAllData();
   };
 
   const handleToggleMilestone = async (id: number, completed: boolean) => {
-    const { error } = await supabase
+    await supabase
       .from('milestones')
       .update({ is_completed: completed })
       .eq('id', id);
 
-    if (error) return alert('Update failed');
-
-    setMilestones(milestones.map(m => m.id === id ? { ...m, completed } : m));
+    loadAllData();
   };
+
+  /* =====================
+     Render
+  ===================== */
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -273,6 +373,8 @@ export default function StaffDashboard() {
               onToggleMilestone={handleToggleMilestone}
             />
           )}
+
+          {activeTab === 'superadmins' && <SuperAdminsTab />}
         </div>
       </main>
 
@@ -281,7 +383,7 @@ export default function StaffDashboard() {
         modalType={modalType}
         formData={formData}
         onClose={() => setShowModal(false)}
-        onSubmit={() => {}}
+        onSubmit={handleSubmit}
       />
     </div>
   );
