@@ -38,12 +38,13 @@ export default function FormModal({
   };
 
   const getTitle = () => {
-    const isAdd = modalType.includes('add');
+    const isAdd = !modalType.includes('edit');
     if (modalType.includes('event')) return `${isAdd ? 'Add New' : 'Edit'} Event`;
     if (modalType.includes('communication')) return `${isAdd ? 'Add New' : 'Edit'} Announcement`;
     if (modalType.includes('internship')) return `${isAdd ? 'Add New' : 'Edit'} Internship`;
     if (modalType.includes('campaign')) return `${isAdd ? 'Add New' : 'Edit'} Campaign`;
     if (modalType.includes('milestone')) return `${isAdd ? 'Add New' : 'Edit'} Milestone`;
+    if (modalType.includes('todo')) return `${isAdd ? 'Add New' : 'Edit'} Task`;
     return 'Form';
   };
 
@@ -414,6 +415,66 @@ export default function FormModal({
                   required
                 />
               </div>
+            </div>
+          )}
+
+          {/* Todo Form */}
+          {modalType.includes('todo') && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Task Title</label>
+                <input
+                  type="text"
+                  value={localData.title || ''}
+                  onChange={(e) => handleChange('title', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                  <input
+                    type="date"
+                    value={localData.dueDate || ''}
+                    onChange={(e) => handleChange('dueDate', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                  <select
+                    value={localData.priority || ''}
+                    onChange={(e) => handleChange('priority', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="">Select priority</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  value={localData.description || ''}
+                  onChange={(e) => handleChange('description', e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  placeholder="What needs to be done?"
+                />
+              </div>
+              <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={!!localData.completed}
+                  onChange={(e) => handleChange('completed', e.target.checked)}
+                  className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                />
+                Mark as completed
+              </label>
             </div>
           )}
 

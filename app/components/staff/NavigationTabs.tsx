@@ -16,7 +16,8 @@ export default function NavigationTabs({ activeTab, onTabChange }: NavigationTab
     { id: 'events', label: 'Events List', icon: Calendar },
     { id: 'communications', label: 'Communications', icon: MessageSquare },
     { id: 'internships', label: 'Internships', icon: Briefcase },
-    { id: 'admissions', label: 'Admissions 2026', icon: Award }
+    { id: 'admissions', label: 'Admissions 2026', icon: Award },
+    { id: 'todos', label: 'Daily To-Dos', icon: MessageSquare }
   ];
 
   // Show superadmins tab only for users with role 'super_admin'

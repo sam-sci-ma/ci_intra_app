@@ -12,6 +12,7 @@ import CommunicationsTab from '@/app/components/staff/CommunicationsTab';
 import InternshipsTab from '@/app/components/staff/InternshipsTab';
 import AdmissionsTab from '@/app/components/staff/AdmissionsTab';
 import SuperAdminsTab from '@/app/components/staff/SuperAdminsTab';
+import TodoTab from '../../components/staff/TodoTab';
 
 /* =====================
    Types
@@ -77,6 +78,19 @@ type Milestone = {
 
 type AdmissionsMetric = Record<string, any>;
 
+type TodoItem = {
+  id?: number;
+  title: string;
+  description?: string;
+  due_date?: string;
+  dueDate?: string;
+  priority?: string;
+  is_completed?: boolean;
+  completed?: boolean;
+  created_by?: string;
+  owner_name?: string;
+};
+
 export default function StaffDashboard() {
   const { user } = useAuth();
 
@@ -92,6 +106,7 @@ export default function StaffDashboard() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [admissionsMetrics, setAdmissionsMetrics] = useState<AdmissionsMetric[]>([]);
+  const [todos, setTodos] = useState<TodoItem[]>([]);
 
   /* =====================
      Load data
@@ -108,7 +123,8 @@ export default function StaffDashboard() {
       internshipsRes,
       campaignsRes,
       milestonesRes,
-      admissionsRes
+      admissionsRes,
+      todosRes
     ] = await Promise.all([
       supabase
         .from('events')
@@ -118,7 +134,11 @@ export default function StaffDashboard() {
       supabase.from('internships').select('*').order('start_date', { ascending: false }),
       supabase.from('campaigns').select('*').order('start_date', { ascending: false }),
       supabase.from('milestones').select('*').order('due_date'),
-      supabase.from('admissions_metrics').select('*')
+      supabase.from('admissions_metrics').select('*'),
+      supabase
+        .from('daily_todos')
+        .select('*')
+        .order('due_date', { ascending: true })
     ]);
 
     console.log('Events Response:', eventsRes);
@@ -133,6 +153,17 @@ export default function StaffDashboard() {
     if (campaignsRes.data) setCampaigns(mapCampaigns(campaignsRes.data));
     if (milestonesRes.data) setMilestones(mapMilestones(milestonesRes.data));
     if (admissionsRes.data) setAdmissionsMetrics(admissionsRes.data);
+    
+    console.log('Todos Response:', todosRes);
+    if (todosRes.error) {
+      console.error('Todos Error Message:', todosRes.error.message);
+      console.error('Todos Error Code:', todosRes.error.code);
+      console.error('Full Todos Error:', todosRes.error);
+    }
+    if (todosRes.data) {
+      console.log('Todos Data:', todosRes.data);
+      setTodos(mapTodos(todosRes.data));
+    }
   }
 
   /* =====================
@@ -167,6 +198,14 @@ export default function StaffDashboard() {
       completed: m.is_completed
     }));
 
+  const mapTodos = (data: any[]) =>
+    data.map(t => ({
+      ...t,
+      dueDate: t.due_date,
+      completed: t.is_completed,
+      owner_name: t.created_by ? 'Me' : 'System Admin'
+    }));
+
   /* =====================
      Modal handlers
   ===================== */
@@ -193,7 +232,8 @@ export default function StaffDashboard() {
       communication: 'communications',
       internship: 'internships',
       campaign: 'campaigns',
-      milestone: 'milestones'
+      milestone: 'milestones',
+      todo: 'daily_todos'
     };
 
     const table = tables[modalType];
@@ -239,6 +279,15 @@ export default function StaffDashboard() {
         spent: data.spent,
         leads: data.leads,
         start_date: data.startDate
+      };
+    } else if (modalType === 'todo') {
+      dbData = {
+        title: data.title,
+        description: data.description,
+        due_date: data.dueDate,
+        priority: data.priority,
+        is_completed: !!data.completed,
+        created_by: user?.id
       };
     } else {
       dbData = {
@@ -287,7 +336,8 @@ export default function StaffDashboard() {
       communication: 'communications',
       internship: 'internships',
       campaign: 'campaigns',
-      milestone: 'milestones'
+      milestone: 'milestones',
+      todo: 'daily_todos'
     };
 
     await supabase.from(tables[type]).delete().eq('id', id);
@@ -297,6 +347,15 @@ export default function StaffDashboard() {
   const handleToggleMilestone = async (id: number, completed: boolean) => {
     await supabase
       .from('milestones')
+      .update({ is_completed: completed })
+      .eq('id', id);
+
+    loadAllData();
+  };
+
+  const handleToggleTodo = async (id: number, completed: boolean) => {
+    await supabase
+      .from('daily_todos')
       .update({ is_completed: completed })
       .eq('id', id);
 
@@ -371,6 +430,18 @@ export default function StaffDashboard() {
               onDeleteMilestone={id => handleDelete(id, 'milestone')}
               onAddMilestone={() => openAddModal('milestone')}
               onToggleMilestone={handleToggleMilestone}
+            />
+          )}
+
+          {activeTab === 'todos' && (
+            <TodoTab
+              todos={todos}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              onToggle={handleToggleTodo}
+              onEdit={(t: TodoItem) => openEditModal('todo', t)}
+              onDelete={(id: number) => handleDelete(id, 'todo')}
+              onAdd={() => openAddModal('todo')}
             />
           )}
 
